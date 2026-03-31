@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(findstr:*)",
+      "Bash(python:*)",
+      "Bash(netstat:*)",
+      "Bash(taskkill:*)",
+      "Bash(cmd:*)",
+      "Bash(powershell -Command \"Stop-Process -Id 10452 -Force; Stop-Process -Id 5528 -Force\")",
+      "Bash(powershell:*)",
+      "Bash(wmic:*)",
+      "Bash(tasklist:*)",
+      "Bash(tskill:*)",
+      "Bash(wsl:*)",
+      "Bash(cd:*)",
+      "Bash(tree:*)",
+      "Bash(dir:*)",
+      "Bash(curl:*)",
+      "Bash(timeout:*)",
+      "Bash(ping:*)",
+      "Bash(start.bat)",
+      "Bash(bash:*)",
+      "Bash(sqlite3:*)",
+      "Bash(ls:*)",
+      "Bash(chcp:*)"
+    ]
+  }
+}

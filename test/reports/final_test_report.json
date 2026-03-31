@@ -1,0 +1,28 @@
+{
+  "timestamp": "2026-03-25T02:19:09.528243",
+  "duration": 36.606237,
+  "results": {
+    "unit": {
+      "tests_run": 85,
+      "failures": 1,
+      "errors": 6,
+      "skipped": 0,
+      "success": false
+    },
+    "integration": {
+      "tests_run": 48,
+      "failures": 0,
+      "errors": 6,
+      "skipped": 0,
+      "success": false
+    },
+    "system": {
+      "tests_run": 39,
+      "failures": 2,
+      "errors": 7,
+      "skipped": 0,
+      "success": false
+    }
+  },
+  "all_passed": false
+}

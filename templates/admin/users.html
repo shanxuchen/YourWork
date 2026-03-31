@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户管理 - YourWork</title>
+    <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="stylesheet" href="/static/css/components.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="/">YourWork</a>
+        </div>
+        <div class="navbar-menu">
+            <a href="/">首页</a>
+            <a href="/projects">项目</a>
+            <a href="/messages">消息</a>
+            <a href="/admin/users">用户管理</a>
+            <span id="user-info" class="user-info"></span>
+            <a href="#" onclick="logout()">退出</a>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="page-header">
+            <h1>用户管理</h1>
+            <div class="page-header-actions">
+                <button class="btn btn-secondary" onclick="batch_edit_roles()">批量修改角色</button>
+                <button class="btn btn-secondary" onclick="batch_delete_users()">批量删除</button>
+                <button class="btn btn-primary" onclick="show_create_user_modal()">创建用户</button>
+            </div>
+        </div>
+
+        <!-- 用户列表 -->
+        <section class="content-section">
+            <div class="table-container">
+                <table class="table" id="users-table">
+                    <thead>
+                        <tr>
+                            <th width="40"><input type="checkbox" id="select-all" onchange="toggle_select_all(this)"></th>
+                            <th>用户名</th>
+                            <th>显示名称</th>
+                            <th>邮箱</th>
+                            <th>角色</th>
+                            <th>状态</th>
+                            <th>创建时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="8" class="text-center">加载中...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- 创建用户弹窗 -->
+    <div id="create-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>创建用户</h3>
+                <button class="modal-close" onclick="close_create_modal()">&times;</button>
+            </div>
+            <form id="create-form" onsubmit="create_user(event)">
+                <div class="form-group">
+                    <label class="form-label">用户名 *</label>
+                    <input type="text" id="create-username" class="form-input" style="max-width: 400px;" required pattern="[a-zA-Z0-9_]+" placeholder="英文字母、数字、下划线">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">密码 *</label>
+                    <input type="password" id="create-password" class="form-input" style="max-width: 400px;" required minlength="6" placeholder="至少6位">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">显示名称</label>
+                    <input type="text" id="create-display-name" class="form-input" style="max-width: 400px;" placeholder="可选">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">邮箱</label>
+                    <input type="email" id="create-email" class="form-input" style="max-width: 400px;" placeholder="可选">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">角色 *</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="create-role" value="SYSTEM_ADMIN"> 系统管理员</label>
+                        <label><input type="radio" name="create-role" value="ADMIN"> 管理员</label>
+                        <label><input type="radio" name="create-role" value="WORKER" checked> 工作人员</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="close_create_modal()">取消</button>
+                    <button type="submit" class="btn btn-primary">创建</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 编辑用户弹窗 -->
+    <div id="edit-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>编辑用户</h3>
+                <button class="modal-close" onclick="close_edit_modal()">&times;</button>
+            </div>
+            <form id="edit-form" onsubmit="update_user(event)">
+                <input type="hidden" id="edit-user-id">
+                <div class="form-group">
+                    <label class="form-label">用户名</label>
+                    <input type="text" id="edit-username" class="form-input" style="max-width: 400px;" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">显示名称</label>
+                    <input type="text" id="edit-display-name" class="form-input" style="max-width: 400px;" placeholder="可选">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">邮箱</label>
+                    <input type="email" id="edit-email" class="form-input" style="max-width: 400px;" placeholder="可选">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">角色 *</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="edit-role" value="SYSTEM_ADMIN"> 系统管理员</label>
+                        <label><input type="radio" name="edit-role" value="ADMIN"> 管理员</label>
+                        <label><input type="radio" name="edit-role" value="WORKER"> 工作人员</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="reset_password()" style="margin-right: auto;">重置密码为默认</button>
+                    <button type="button" class="btn btn-secondary" onclick="close_edit_modal()">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 批量修改角色弹窗 -->
+    <div id="batch-role-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>批量修改角色</h3>
+                <button class="modal-close" onclick="close_batch_role_modal()">&times;</button>
+            </div>
+            <form id="batch-role-form" onsubmit="save_batch_roles(event)">
+                <div class="form-group">
+                    <label class="form-label">已选择 <span id="batch-count">0</span> 个用户</label>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">角色 *</label>
+                    <div class="radio-group">
+                        <label><input type="radio" name="batch-role" value="SYSTEM_ADMIN"> 系统管理员</label>
+                        <label><input type="radio" name="batch-role" value="ADMIN"> 管理员</label>
+                        <label><input type="radio" name="batch-role" value="WORKER" checked> 工作人员</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="close_batch_role_modal()">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="/static/js/utils.js"></script>
+    <script src="/static/js/api.js"></script>
+    <script>
+        let current_user = null;
+        let all_users = [];
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('[INFO] 用户管理页面加载完成');
+            await init_app();
+        });
+
+        async function init_app() {
+            const result = await api_get('/auth/profile');
+            if (result.code === 0) {
+                current_user = result.data;
+                console.log('[INFO] 用户登录成功:', current_user.username);
+
+                document.getElementById('user-info').textContent = current_user.display_name || current_user.username;
+
+                const is_admin = (current_user.roles || []).some(function(r) {
+                    return r.code === 'SYSTEM_ADMIN';
+                });
+
+                if (!is_admin) {
+                    show_message('只有系统管理员可以访问此页面', 'error');
+                    setTimeout(function() {
+                        window.location.href = '/';
+                    }, 2000);
+                    return;
+                }
+
+                await load_users();
+            } else {
+                window.location.href = '/login';
+            }
+        }
+
+        async function load_users() {
+            console.log('[INFO] 加载用户列表');
+
+            try {
+                const result = await api_get('/users');
+                if (result.code === 0) {
+                    all_users = result.data;
+                    render_users(all_users);
+                } else {
+                    console.log('[WARNING] 加载用户失败:', result.message);
+                }
+            } catch (e) {
+                console.log('[ERROR] 加载用户异常:', e);
+            }
+        }
+
+        function render_users(users) {
+            const tbody = document.querySelector('#users-table tbody');
+
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center">暂无用户</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = users.map(function(user) {
+                const role = (user.roles && user.roles.length > 0) ? user.roles[0] : null;
+                const role_text = role ? get_role_text(role.code) : '-';
+
+                return `
+                    <tr data-user-id="${user.id}">
+                        <td><input type="checkbox" class="user-checkbox" value="${user.id}" ${user.id === current_user.id ? 'disabled' : ''}></td>
+                        <td>${escape_html(user.username)}</td>
+                        <td>${escape_html(user.display_name || '-')}</td>
+                        <td>${escape_html(user.email || '-')}</td>
+                        <td><span class="status-badge ${role ? 'status-in-progress' : 'status-paused'}">${role_text}</span></td>
+                        <td>${user.is_active ? '<span class="status-badge status-in-progress">启用</span>' : '<span class="status-badge status-paused">禁用</span>'}</td>
+                        <td>${format_date(user.created_at)}</td>
+                        <td>
+                            <button class="btn btn-secondary btn-sm" onclick="edit_user('${user.id}')">编辑</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // 全选/取消全选
+        function toggle_select_all(checkbox) {
+            const checkboxes = document.querySelectorAll('.user-checkbox');
+            checkboxes.forEach(function(cb) {
+                if (!cb.disabled) {
+                    cb.checked = checkbox.checked;
+                }
+            });
+        }
+
+        // 获取选中的用户ID
+        function get_selected_user_ids() {
+            const checkboxes = document.querySelectorAll('.user-checkbox:checked');
+            return Array.from(checkboxes).map(function(cb) {
+                return cb.value;
+            });
+        }
+
+        // ========== 创建用户 ==========
+        function show_create_user_modal() {
+            document.getElementById('create-form').reset();
+            document.getElementById('create-modal').style.display = 'flex';
+        }
+
+        function close_create_modal() {
+            document.getElementById('create-modal').style.display = 'none';
+        }
+
+        async function create_user(event) {
+            event.preventDefault();
+
+            const username = document.getElementById('create-username').value.trim();
+            const password = document.getElementById('create-password').value;
+            const display_name = document.getElementById('create-display-name').value.trim();
+            const email = document.getElementById('create-email').value.trim();
+
+            const role_radio = document.querySelector('input[name="create-role"]:checked');
+            if (!role_radio) {
+                show_message('请选择角色', 'error');
+                return;
+            }
+            const role = role_radio.value;
+
+            console.log('[INFO] 创建用户:', username, role);
+
+            try {
+                const result = await api_post('/users', {
+                    username: username,
+                    password: password,
+                    display_name: display_name || username,
+                    email: email,
+                    roles: [role]
+                });
+
+                if (result.code === 0) {
+                    show_message('用户创建成功', 'success');
+                    close_create_modal();
+                    await load_users();
+                } else {
+                    show_message(result.message, 'error');
+                }
+            } catch (e) {
+                console.log('[ERROR] 创建用户异常:', e);
+                show_message('创建失败，请稍后重试', 'error');
+            }
+        }
+
+        // ========== 编辑用户 ==========
+        function edit_user(user_id) {
+            const user = all_users.find(function(u) { return u.id === user_id; });
+            if (!user) return;
+
+            document.getElementById('edit-user-id').value = user.id;
+            document.getElementById('edit-username').value = user.username;
+            document.getElementById('edit-display-name').value = user.display_name || '';
+            document.getElementById('edit-email').value = user.email || '';
+
+            // 设置当前角色
+            const role = (user.roles && user.roles.length > 0) ? user.roles[0] : null;
+            if (role) {
+                const radio = document.querySelector(`input[name="edit-role"][value="${role.code}"]`);
+                if (radio) radio.checked = true;
+            }
+
+            document.getElementById('edit-modal').style.display = 'flex';
+        }
+
+        function close_edit_modal() {
+            document.getElementById('edit-modal').style.display = 'none';
+        }
+
+        async function update_user(event) {
+            event.preventDefault();
+
+            const user_id = document.getElementById('edit-user-id').value;
+            const display_name = document.getElementById('edit-display-name').value.trim();
+            const email = document.getElementById('edit-email').value.trim();
+
+            const role_radio = document.querySelector('input[name="edit-role"]:checked');
+            if (!role_radio) {
+                show_message('请选择角色', 'error');
+                return;
+            }
+            const role = role_radio.value;
+
+            console.log('[INFO] 更新用户:', user_id, role);
+
+            try {
+                // 更新基本信息
+                const result1 = await api_put('/users/' + user_id, {
+                    display_name: display_name,
+                    email: email
+                });
+
+                // 更新角色
+                const result2 = await api_put('/users/' + user_id + '/roles', {
+                    roles: [role]
+                });
+
+                if (result1.code === 0 && result2.code === 0) {
+                    show_message('用户更新成功', 'success');
+                    close_edit_modal();
+                    await load_users();
+                } else {
+                    show_message(result1.message || result2.message || '更新失败', 'error');
+                }
+            } catch (e) {
+                console.log('[ERROR] 更新用户异常:', e);
+                show_message('更新失败，请稍后重试', 'error');
+            }
+        }
+
+        async function reset_password() {
+            const user_id = document.getElementById('edit-user-id').value;
+            if (!confirm('确定要将密码重置为默认密码 user1234 吗？')) {
+                return;
+            }
+
+            try {
+                const result = await api_put('/users/' + user_id + '/password', {
+                    password: 'user1234'
+                });
+
+                if (result.code === 0) {
+                    show_message('密码已重置为 user1234', 'success');
+                    close_edit_modal();
+                } else {
+                    show_message(result.message, 'error');
+                }
+            } catch (e) {
+                console.log('[ERROR] 重置密码异常:', e);
+                show_message('重置失败，请稍后重试', 'error');
+            }
+        }
+
+        // ========== 批量修改角色 ==========
+        function batch_edit_roles() {
+            const user_ids = get_selected_user_ids();
+            if (user_ids.length === 0) {
+                show_message('请先选择用户', 'error');
+                return;
+            }
+
+            document.getElementById('batch-count').textContent = user_ids.length;
+            document.getElementById('batch-role-modal').style.display = 'flex';
+        }
+
+        function close_batch_role_modal() {
+            document.getElementById('batch-role-modal').style.display = 'none';
+        }
+
+        async function save_batch_roles(event) {
+            event.preventDefault();
+
+            const role_radio = document.querySelector('input[name="batch-role"]:checked');
+            if (!role_radio) {
+                show_message('请选择角色', 'error');
+                return;
+            }
+            const role = role_radio.value;
+
+            const user_ids = get_selected_user_ids();
+
+            console.log('[INFO] 批量更新用户角色:', user_ids, role);
+
+            try {
+                let success_count = 0;
+                let error_messages = [];
+
+                for (let i = 0; i < user_ids.length; i++) {
+                    const result = await api_put('/users/' + user_ids[i] + '/roles', { roles: [role] });
+                    console.log('[INFO] 更新用户 ' + user_ids[i] + ' 角色结果:', result);
+                    if (result.code === 0) {
+                        success_count++;
+                    } else {
+                        error_messages.push('用户 ' + user_ids[i] + ': ' + (result.message || '未知错误'));
+                    }
+                }
+
+                if (success_count === user_ids.length) {
+                    show_message('成功更新 ' + success_count + ' 个用户的角色', 'success');
+                    close_batch_role_modal();
+                    await load_users();
+                } else {
+                    show_message('部分更新成功: ' + success_count + '/' + user_ids.length + '。失败原因: ' + error_messages.join('; '), 'warning');
+                }
+            } catch (e) {
+                console.log('[ERROR] 更新角色异常:', e);
+                show_message('更新失败，请稍后重试', 'error');
+            }
+        }
+
+        // ========== 批量删除 ==========
+        async function batch_delete_users() {
+            const user_ids = get_selected_user_ids();
+            if (user_ids.length === 0) {
+                show_message('请先选择用户', 'error');
+                return;
+            }
+
+            if (!confirm('确定要删除选中的 ' + user_ids.length + ' 个用户吗？此操作不可恢复！')) {
+                return;
+            }
+
+            console.log('[INFO] 删除用户:', user_ids);
+
+            try {
+                let success_count = 0;
+                let error_messages = [];
+
+                for (let i = 0; i < user_ids.length; i++) {
+                    const result = await api_delete('/users/' + user_ids[i]);
+                    console.log('[INFO] 删除用户 ' + user_ids[i] + ' 结果:', result);
+                    if (result.code === 0) {
+                        success_count++;
+                    } else {
+                        error_messages.push('用户 ' + user_ids[i] + ': ' + (result.message || '未知错误'));
+                    }
+                }
+
+                if (success_count === user_ids.length) {
+                    show_message('成功删除 ' + success_count + ' 个用户', 'success');
+                    await load_users();
+                } else {
+                    show_message('部分删除成功: ' + success_count + '/' + user_ids.length + '。失败原因: ' + error_messages.join('; '), 'warning');
+                    await load_users();
+                }
+            } catch (e) {
+                console.log('[ERROR] 删除用户异常:', e);
+                show_message('删除失败，请稍后重试', 'error');
+            }
+        }
+
+        // ========== 工具函数 ==========
+        async function api_put(endpoint, data) {
+            const url = '/api/v1' + endpoint;
+            console.log('[INFO] PUT ' + url, data);
+
+            try {
+                const response = await fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data || {})
+                });
+                return await response.json();
+            } catch (e) {
+                console.log('[ERROR] PUT 请求失败:', url, e);
+                throw e;
+            }
+        }
+
+        async function api_delete(endpoint) {
+            const url = '/api/v1' + endpoint;
+            console.log('[INFO] DELETE ' + url);
+
+            try {
+                const response = await fetch(url, {
+                    method: 'DELETE'
+                });
+                return await response.json();
+            } catch (e) {
+                console.log('[ERROR] DELETE 请求失败:', url, e);
+                throw e;
+            }
+        }
+
+        function get_role_text(code) {
+            const texts = {
+                'SYSTEM_ADMIN': '系统管理员',
+                'ADMIN': '管理员',
+                'WORKER': '工作人员'
+            };
+            return texts[code] || code;
+        }
+
+        function escape_html(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function format_date(date_str) {
+            if (!date_str) return '';
+            const date = new Date(date_str);
+            return date.toLocaleString('zh-CN');
+        }
+
+        function show_message(message, type) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast toast-' + type;
+            toast.textContent = message;
+            container.appendChild(toast);
+
+            setTimeout(function() {
+                toast.classList.add('show');
+            }, 10);
+
+            setTimeout(function() {
+                toast.classList.remove('show');
+                setTimeout(function() {
+                    container.removeChild(toast);
+                }, 300);
+            }, 3000);
+        }
+
+        async function logout() {
+            if (confirm('确定要退出登录吗？')) {
+                await api_post('/auth/logout');
+                window.location.href = '/login';
+            }
+        }
+    </script>
+</body>
+</html>

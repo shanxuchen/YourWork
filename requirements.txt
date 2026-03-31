@@ -1,0 +1,15 @@
+# YourWork - 企业项目管理系统
+# 依赖文件 - 最小化依赖，仅使用必要的第三方库
+
+# Web 框架和服务器
+fastapi>=0.110.0
+uvicorn[standard]>=0.27.0
+
+# 注意: 以下功能均使用 Python 内置模块
+# - sqlite3: 数据库操作
+# - hashlib: 密码加密
+# - logging: 日志系统
+# - json: JSON 处理
+# - uuid: 唯一 ID 生成
+# - datetime: 时间处理
+# - os/pathlib: 文件操作

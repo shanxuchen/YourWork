@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>创建项目 - YourWork</title>
+    <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="stylesheet" href="/static/css/components.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="/">YourWork</a>
+        </div>
+        <div class="navbar-menu">
+            <a href="/">首页</a>
+            <a href="/projects">项目</a>
+            <a href="/messages">消息</a>
+            <a href="/admin/users" id="admin-link" style="display: none;">用户管理</a>
+            <span id="user-info" class="user-info"></span>
+            <a href="#" onclick="logout()">退出</a>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="page-header">
+            <h1>创建项目</h1>
+            <a href="/projects" class="btn btn-secondary">返回列表</a>
+        </div>
+
+        <div class="form-container">
+            <form id="create-project-form" onsubmit="handle_create(event)" class="form-card">
+                <div class="form-group">
+                    <label class="form-label" for="project-name">项目名称 *</label>
+                    <input
+                        type="text"
+                        id="project-name"
+                        name="name"
+                        class="form-input"
+                        placeholder="请输入项目名称"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="project-description">项目描述</label>
+                    <textarea
+                        id="project-description"
+                        name="description"
+                        class="form-textarea"
+                        rows="5"
+                        placeholder="请输入项目描述（可选）"
+                    ></textarea>
+                </div>
+
+                <div class="form-actions">
+                    <a href="/projects" class="btn btn-secondary">取消</a>
+                    <button type="submit" class="btn btn-primary">创建项目</button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="/static/js/api.js"></script>
+    <script>
+        let current_user = null;
+        let is_admin = false;
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('[INFO] 创建项目页面加载完成');
+            await init_app();
+        });
+
+        async function init_app() {
+            const result = await api_get('/auth/profile');
+            if (result.code === 0) {
+                current_user = result.data;
+                is_admin = check_is_admin(current_user.roles || []);
+                console.log('[INFO] 用户登录成功:', current_user.username);
+
+                document.getElementById('user-info').textContent = current_user.display_name || current_user.username;
+
+                if (is_admin) {
+                    document.getElementById('admin-link').style.display = 'inline-block';
+                }
+            } else {
+                window.location.href = '/login';
+            }
+
+            // 检查权限
+            if (!is_admin) {
+                show_message('只有管理员可以创建项目', 'error');
+                setTimeout(function() {
+                    window.location.href = '/projects';
+                }, 2000);
+            }
+        }
+
+        function check_is_admin(roles) {
+            return roles.some(function(r) {
+                return r.code === 'ADMIN' || r.code === 'SYSTEM_ADMIN';
+            });
+        }
+
+        async function handle_create(event) {
+            event.preventDefault();
+
+            const name = document.getElementById('project-name').value.trim();
+            const description = document.getElementById('project-description').value.trim();
+
+            if (!name) {
+                show_message('请输入项目名称', 'error');
+                return;
+            }
+
+            console.log('[INFO] 创建项目:', name);
+
+            const data = {
+                name: name,
+                description: description
+            };
+
+            try {
+                const result = await api_post('/projects', data);
+                if (result.code === 0) {
+                    console.log('[INFO] 项目创建成功:', result.data.project_no);
+                    show_message('项目创建成功！', 'success');
+                    setTimeout(function() {
+                        window.location.href = '/projects/' + result.data.project_id;
+                    }, 1000);
+                } else {
+                    console.log('[WARNING] 创建项目失败:', result.message);
+                    show_message(result.message, 'error');
+                }
+            } catch (e) {
+                console.log('[ERROR] 创建项目异常:', e);
+                show_message('创建失败，请稍后重试', 'error');
+            }
+        }
+
+        function show_message(message, type) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast toast-' + type;
+            toast.textContent = message;
+            container.appendChild(toast);
+
+            setTimeout(function() {
+                toast.classList.add('show');
+            }, 10);
+
+            setTimeout(function() {
+                toast.classList.remove('show');
+                setTimeout(function() {
+                    container.removeChild(toast);
+                }, 300);
+            }, 3000);
+        }
+
+        async function logout() {
+            if (confirm('确定要退出登录吗？')) {
+                await api_post('/auth/logout');
+                window.location.href = '/login';
+            }
+        }
+    </script>
+</body>
+</html>

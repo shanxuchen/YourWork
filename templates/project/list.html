@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>项目列表 - YourWork</title>
+    <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="stylesheet" href="/static/css/components.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="/">YourWork</a>
+        </div>
+        <div class="navbar-menu">
+            <a href="/">首页</a>
+            <a href="/projects">项目</a>
+            <a href="/messages">消息</a>
+            <a href="/admin/users" id="admin-link" style="display: none;">用户管理</a>
+            <span id="user-info" class="user-info"></span>
+            <a href="#" onclick="logout()">退出</a>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="page-header">
+            <h1>项目管理</h1>
+            <a href="/projects/create" class="btn btn-primary" id="create-project-btn">创建项目</a>
+        </div>
+
+        <!-- 筛选和搜索 -->
+        <div class="filter-bar">
+            <div class="filter-group">
+                <select id="status-filter" class="form-select" onchange="filter_projects()">
+                    <option value="">全部状态</option>
+                    <option value="in_progress">进行中</option>
+                    <option value="completed">已完成</option>
+                    <option value="ignored">已挂起</option>
+                    <option value="archived">已归档</option>
+                </select>
+            </div>
+            <div class="search-group">
+                <input
+                    type="text"
+                    id="search-input"
+                    class="form-input"
+                    placeholder="搜索项目名称或编号..."
+                    onkeyup="if(event.keyCode === 13) filter_projects()"
+                >
+                <button class="btn btn-secondary" onclick="filter_projects()">搜索</button>
+            </div>
+        </div>
+
+        <!-- 项目列表 -->
+        <div id="project-list" class="project-grid">
+            <div class="loading">加载中...</div>
+        </div>
+
+        <!-- 分页 -->
+        <div id="pagination" class="pagination"></div>
+    </main>
+
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="/static/js/utils.js"></script>
+    <script src="/static/js/api.js"></script>
+    <script>
+        let current_user = null;
+        let is_admin = false;
+        let current_page = 1;
+        let page_size = 12;
+        let total_pages = 1;
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('[INFO] 项目列表页面加载完成');
+            await init_app();
+            await load_projects();
+        });
+
+        async function init_app() {
+            const result = await api_get('/auth/profile');
+            if (result.code === 0) {
+                current_user = result.data;
+                is_admin = check_is_admin(current_user.roles || []);
+                console.log('[INFO] 用户登录成功:', current_user.username);
+
+                document.getElementById('user-info').textContent = current_user.display_name || current_user.username;
+
+                if (is_admin) {
+                    document.getElementById('admin-link').style.display = 'inline-block';
+                }
+
+                // 只有管理员可以创建项目
+                if (!is_admin) {
+                    document.getElementById('create-project-btn').style.display = 'none';
+                }
+            } else {
+                window.location.href = '/login';
+            }
+        }
+
+        function check_is_admin(roles) {
+            return roles.some(function(r) {
+                return r.code === 'ADMIN' || r.code === 'SYSTEM_ADMIN';
+            });
+        }
+
+        async function load_projects(page) {
+            if (page) {
+                current_page = page;
+            }
+
+            console.log('[INFO] 加载项目列表，第' + current_page + '页');
+
+            const status = document.getElementById('status-filter').value;
+            const keyword = document.getElementById('search-input').value.trim();
+
+            const params = [];
+            if (status) params.push('status=' + status);
+            if (keyword) params.push('keyword=' + encodeURIComponent(keyword));
+            params.push('page=' + current_page);
+            params.push('page_size=' + page_size);
+
+            const params_str = params.length > 0 ? '?' + params.join('&') : '';
+
+            try {
+                const result = await api_get('/projects' + params_str);
+                if (result.code === 0) {
+                    const data = result.data;
+                    render_projects(data.items);
+                    render_pagination(data.total, data.page, data.page_size);
+                } else {
+                    console.log('[WARNING] 加载项目失败:', result.message);
+                }
+            } catch (e) {
+                console.log('[ERROR] 加载项目异常:', e);
+            }
+        }
+
+        // 归档项目
+        async function archive_project(project_id, project_name) {
+            if (!confirm('确定要归档项目「' + project_name + '」吗？\n\n归档后项目将变为只读状态，不在默认列表中显示。')) {
+                return;
+            }
+
+            try {
+                const result = await api_delete('/projects/' + project_id);
+                if (result.code === 0) {
+                    show_toast('项目已归档', 'success');
+                    await load_projects();
+                } else {
+                    show_toast(result.message || '归档失败', 'error');
+                }
+            } catch (e) {
+                console.log('[ERROR] 归档项目异常:', e);
+                show_toast('归档失败，请稍后重试', 'error');
+            }
+        }
+
+        // 显示提示消息
+        function show_toast(message, type) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast toast-' + type;
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+
+        function render_projects(projects) {
+            const container = document.getElementById('project-list');
+
+            if (projects.length === 0) {
+                container.innerHTML = '<div class="empty-state">暂无项目</div>';
+                return;
+            }
+
+            container.innerHTML = projects.map(function(p) {
+                const status_class = get_status_class(p.status);
+                const status_text = get_status_text(p.status);
+
+                // 管理员操作按钮
+                let actions_html = '';
+                if (is_admin && p.status !== 'archived') {
+                    actions_html = `<div class="project-actions" onclick="event.stopPropagation()">
+                        <button class="btn btn-small btn-secondary" onclick="archive_project('${p.id}', '${escape_js_string(p.name)}')">归档</button>
+                    </div>`;
+                }
+
+                return `
+                    <div class="project-card" onclick="location.href='/projects/${p.id}'">
+                        <div class="project-card-header">
+                            <h3>${escape_html(p.name)}</h3>
+                            <span class="status-badge ${status_class}">${status_text}</span>
+                        </div>
+                        <p class="project-card-no">${escape_html(p.project_no)}</p>
+                        ${p.description ? '<p class="project-card-desc">' + escape_html(p.description) + '</p>' : ''}
+                        <p class="project-card-time">创建于: ${format_date(p.created_at)}</p>
+                        ${actions_html}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function render_pagination(total, page, pageSize) {
+            total_pages = Math.ceil(total / pageSize);
+            const container = document.getElementById('pagination');
+
+            if (total_pages <= 1) {
+                container.innerHTML = '';
+                return;
+            }
+
+            let html = '<div class="pagination-info">共 ' + total + ' 个项目，第 ' + page + '/' + total_pages + ' 页</div>';
+            html += '<div class="pagination-pages">';
+
+            // 上一页
+            if (page > 1) {
+                html += '<button class="btn btn-secondary" onclick="load_projects(' + (page - 1) + ')">上一页</button>';
+            }
+
+            // 页码
+            for (let i = 1; i <= total_pages; i++) {
+                if (i === page) {
+                    html += '<button class="btn btn-primary disabled">' + i + '</button>';
+                } else if (i === 1 || i === total_pages || Math.abs(i - page) <= 2) {
+                    html += '<button class="btn btn-secondary" onclick="load_projects(' + i + ')">' + i + '</button>';
+                } else if (Math.abs(i - page) === 3) {
+                    html += '<span>...</span>';
+                }
+            }
+
+            // 下一页
+            if (page < total_pages) {
+                html += '<button class="btn btn-secondary" onclick="load_projects(' + (page + 1) + ')">下一页</button>';
+            }
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function filter_projects() {
+            load_projects(1);
+        }
+
+        function get_status_class(status) {
+            const classes = {
+                'in_progress': 'status-in-progress',
+                'completed': 'status-completed',
+                'ignored': 'status-paused',
+                'archived': 'status-archived'
+            };
+            return classes[status] || '';
+        }
+
+        function get_status_text(status) {
+            const texts = {
+                'in_progress': '进行中',
+                'completed': '已完成',
+                'ignored': '已挂起',
+                'archived': '已归档'
+            };
+            return texts[status] || status;
+        }
+
+        function escape_html(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 转义JavaScript字符串中的特殊字符（防止XSS）
+        function escape_js_string(text) {
+            return String(text)
+                .replace(/\\/g, '\\\\')
+                .replace(/'/g, "\\'")
+                .replace(/"/g, '\\"')
+                .replace(/\n/g, '\\n')
+                .replace(/\r/g, '\\r');
+        }
+
+        function format_date(date_str) {
+            if (!date_str) return '';
+            const date = new Date(date_str);
+            return date.toLocaleString('zh-CN');
+        }
+
+        async function logout() {
+            if (confirm('确定要退出登录吗？')) {
+                await api_post('/auth/logout');
+                window.location.href = '/login';
+            }
+        }
+    </script>
+</body>
+</html>

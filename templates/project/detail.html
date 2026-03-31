@@ -1,0 +1,1377 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>项目详情 - YourWork</title>
+    <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="stylesheet" href="/static/css/components.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="navbar-brand">
+            <a href="/">YourWork</a>
+        </div>
+        <div class="navbar-menu">
+            <a href="/">首页</a>
+            <a href="/projects">项目</a>
+            <a href="/messages">消息</a>
+            <a href="/admin/users" id="admin-link" style="display: none;">用户管理</a>
+            <span id="user-info" class="user-info"></span>
+            <a href="#" onclick="logout()">退出</a>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="page-header">
+            <h1 id="project-name">项目详情</h1>
+            <div class="page-header-actions">
+                <a href="/projects" class="btn btn-secondary">返回列表</a>
+                <button id="edit-project-btn" class="btn btn-primary" onclick="edit_project()">编辑项目</button>
+            </div>
+        </div>
+
+        <!-- 项目基本信息 -->
+        <section class="content-section">
+            <h2>项目信息</h2>
+            <div class="info-grid" id="project-info">
+                <div class="loading">加载中...</div>
+            </div>
+        </section>
+
+        <!-- Tab 导航 -->
+        <div class="tabs">
+            <button class="tab-button active" onclick="switch_tab('milestones')">里程碑</button>
+            <button class="tab-button" onclick="switch_tab('deliverables')">产出物</button>
+            <button class="tab-button" onclick="switch_tab('members')">成员</button>
+        </div>
+
+        <!-- 里程碑 Tab -->
+        <section id="tab-milestones" class="tab-content active">
+            <div class="tab-header">
+                <h3>里程碑列表</h3>
+                <button id="add-milestone-btn" class="btn btn-primary" onclick="show_add_milestone_modal()">添加里程碑</button>
+            </div>
+
+            <!-- 状态汇总面板 -->
+            <div id="milestone-status-panel" class="milestone-status-panel" style="margin-bottom: 20px;">
+                <h4>里程碑状态汇总</h4>
+                <div class="status-summary-grid">
+                    <div class="stat-item">
+                        <span class="stat-value" id="stat-total">-</span>
+                        <span class="stat-label">总数</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value stat-completed" id="stat-completed">-</span>
+                        <span class="stat-label">已完成</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value stat-in-progress" id="stat-in-progress">-</span>
+                        <span class="stat-label">进行中</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value stat-created" id="stat-created">-</span>
+                        <span class="stat-label">已创建</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value stat-suspended" id="stat-suspended">-</span>
+                        <span class="stat-label">已挂起</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value stat-blocked" id="stat-blocked">-</span>
+                        <span class="stat-label">被阻塞</span>
+                    </div>
+                </div>
+                <div class="completion-rate">
+                    <span class="completion-label">完成率:</span>
+                    <span class="completion-value" id="stat-completion-rate">-</span>
+                </div>
+            </div>
+
+            <div id="milestone-list" class="milestone-list">
+                <div class="loading">加载中...</div>
+            </div>
+        </section>
+
+        <!-- 产出物 Tab -->
+        <section id="tab-deliverables" class="tab-content">
+            <div class="tab-header">
+                <h3>产出物</h3>
+                <div style="display: flex; gap: 10px; align-items: center;">
+                    <button class="btn btn-secondary btn-sm" onclick="batch_download_deliverables()">批量下载</button>
+                    <span style="color: #666; font-size: 12px;">提示：请从里程碑列表中点击"上传产出物"按钮</span>
+                </div>
+            </div>
+            <div id="deliverable-list" class="deliverable-list">
+                <div class="loading">加载中...</div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- 隐藏的文件上传输入框 -->
+    <input type="file" id="milestone-file-input" style="display: none;" onchange="upload_file_for_milestone(this)">
+
+        <!-- 成员 Tab -->
+        <section id="tab-members" class="tab-content">
+            <div class="tab-header">
+                <h3>项目成员</h3>
+                <button id="add-member-btn" class="btn btn-primary" onclick="show_add_member_modal()">添加成员</button>
+            </div>
+            <div id="member-list" class="member-list">
+                <div class="loading">加载中...</div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 添加里程碑弹窗 -->
+    <div id="milestone-modal" class="modal">
+        <div class="modal-content" id="milestone-modal-content">
+            <div class="modal-header" id="milestone-modal-header" style="cursor: move;">
+                <h3>添加里程碑</h3>
+                <button class="modal-close" onclick="close_milestone_modal()">&times;</button>
+            </div>
+            <form id="milestone-form" onsubmit="save_milestone(event)">
+                <div class="form-group">
+                    <label class="form-label">名称 *</label>
+                    <input type="text" id="milestone-name" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">类型</label>
+                    <select id="milestone-type" class="form-select">
+                        <option value="milestone">普通里程碑</option>
+                        <option value="acceptance">验收目标</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">描述</label>
+                    <textarea id="milestone-description" class="form-textarea" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">截止日期</label>
+                    <input type="datetime-local" id="milestone-deadline" class="form-input">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="close_milestone_modal()">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 编辑项目弹窗 -->
+    <div id="edit-project-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>编辑项目</h3>
+                <button class="modal-close" onclick="close_edit_project_modal()">&times;</button>
+            </div>
+            <form id="edit-project-form" onsubmit="save_project(event)">
+                <div class="form-group">
+                    <label class="form-label">项目名称 *</label>
+                    <input type="text" id="edit-project-name" class="form-input" style="max-width: 400px;" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">项目描述</label>
+                    <textarea id="edit-project-description" class="form-textarea" style="max-width: 400px;" rows="4"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">项目状态</label>
+                    <select id="edit-project-status" class="form-select" style="max-width: 400px;">
+                        <option value="created">已创建</option>
+                        <option value="in_progress">进行中</option>
+                        <option value="completed">已完成</option>
+                        <option value="ignored">已挂起</option>
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="close_edit_project_modal()">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 添加成员弹窗 -->
+    <div id="add-member-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>添加项目成员</h3>
+                <button class="modal-close" onclick="close_add_member_modal()">&times;</button>
+            </div>
+            <form id="add-member-form" onsubmit="add_member(event)">
+                <div class="form-group">
+                    <label class="form-label">用户 *</label>
+                    <select id="add-member-user" class="form-select" style="max-width: 400px;" required>
+                        <option value="">请选择用户</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">角色</label>
+                    <input type="text" id="add-member-roles" class="form-input" style="max-width: 400px;" placeholder="如：开发、测试">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="close_add_member_modal()">取消</button>
+                    <button type="submit" class="btn btn-primary">添加</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 行动项管理弹窗 -->
+    <div id="items-modal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3>里程碑行动项 - <span id="items-milestone-name"></span></h3>
+                <button class="modal-close" onclick="close_items_modal()">&times;</button>
+            </div>
+            <input type="hidden" id="items-milestone-id">
+            <div class="modal-body">
+                <div id="items-list" class="items-list">
+                    <!-- 行动项列表 -->
+                </div>
+                <button type="button" class="btn btn-secondary" onclick="add_milestone_item()" style="margin-top: 10px;">+ 添加行动项</button>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="close_items_modal()">取消</button>
+                <button type="button" class="btn btn-primary" onclick="save_items_changes()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 依赖关系管理弹窗 -->
+    <div id="deps-modal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>编辑前置依赖 - <span id="deps-milestone-name"></span></h3>
+                <button class="modal-close" onclick="close_deps_modal()">&times;</button>
+            </div>
+            <input type="hidden" id="deps-milestone-id">
+            <input type="hidden" id="deps-is-deliverable">
+            <div class="modal-body">
+                <p class="deps-requirement" id="deps-requirement" style="display: none; color: #e67e22; margin-bottom: 10px;"></p>
+                <p style="margin-bottom: 10px;">选择此里程碑的前置里程碑（必须完成后才能开始）:</p>
+                <div id="deps-available-list" class="deps-list">
+                    <!-- 可选里程碑列表 -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="close_deps_modal()">取消</button>
+                <button type="button" class="btn btn-primary" onclick="save_dependencies()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="/static/js/utils.js"></script>
+    <script src="/static/js/api.js"></script>
+    <script>
+        let current_user = null;
+        let is_admin = false;
+        let project_data = null;
+        let project_id = '{{ project_id }}';
+
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('[INFO] 项目详情页面加载完成，project_id:', project_id);
+            await init_app();
+            await load_project();
+        });
+
+        async function init_app() {
+            const result = await api_get('/auth/profile');
+            if (result.code === 0) {
+                current_user = result.data;
+                is_admin = check_is_admin(current_user.roles || []);
+                console.log('[INFO] 用户登录成功:', current_user.username);
+
+                document.getElementById('user-info').textContent = current_user.display_name || current_user.username;
+
+                if (is_admin) {
+                    document.getElementById('admin-link').style.display = 'inline-block';
+                }
+            } else {
+                window.location.href = '/login';
+            }
+        }
+
+        function check_is_admin(roles) {
+            return roles.some(function(r) {
+                return r.code === 'ADMIN' || r.code === 'SYSTEM_ADMIN';
+            });
+        }
+
+        async function load_project() {
+            console.log('[INFO] 加载项目详情:', project_id);
+
+            try {
+                const result = await api_get('/projects/' + project_id);
+                if (result.code === 0) {
+                    project_data = result.data;
+                    render_project_info(project_data.project);
+                    render_milestones(project_data.milestones);
+                    render_deliverables(project_data.deliverables);
+                    render_members(project_data.members);
+                    await load_milestone_status_summary();
+                } else {
+                    console.log('[WARNING] 加载项目失败:', result.message);
+                    show_message(result.message, 'error');
+                }
+            } catch (e) {
+                console.log('[ERROR] 加载项目异常:', e);
+            }
+        }
+
+        async function load_milestone_status_summary() {
+            try {
+                const result = await api_get('/projects/' + project_id + '/milestone-status');
+                if (result.code === 0) {
+                    const summary = result.data.summary;
+                    document.getElementById('stat-total').textContent = summary.total;
+                    document.getElementById('stat-completed').textContent = summary.completed;
+                    document.getElementById('stat-in-progress').textContent = summary.in_progress;
+                    document.getElementById('stat-created').textContent = summary.created;
+                    document.getElementById('stat-suspended').textContent = summary.suspended;
+                    document.getElementById('stat-blocked').textContent = summary.blocked;
+                    document.getElementById('stat-completion-rate').textContent = summary.completion_rate + '%';
+                }
+            } catch (e) {
+                console.log('[ERROR] 加载状态汇总失败:', e);
+            }
+        }
+
+        function render_project_info(project) {
+            document.getElementById('project-name').textContent = project.name;
+
+            const container = document.getElementById('project-info');
+            const status_class = get_status_class(project.status);
+            const status_text = get_status_text(project.status);
+
+            container.innerHTML = `
+                <div class="info-item">
+                    <span class="info-label">项目编号:</span>
+                    <span class="info-value">${escape_html(project.project_no)}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">状态:</span>
+                    <span class="info-value"><span class="status-badge ${status_class}">${status_text}</span></span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">描述:</span>
+                    <span class="info-value">${project.description ? escape_html(project.description) : '-'}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">创建时间:</span>
+                    <span class="info-value">${format_date(project.created_at)}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">更新时间:</span>
+                    <span class="info-value">${format_date(project.updated_at)}</span>
+                </div>
+            `;
+        }
+
+        function render_milestones(milestones) {
+            const container = document.getElementById('milestone-list');
+
+            if (milestones.length === 0) {
+                container.innerHTML = '<div class="empty-state">暂无里程碑</div>';
+                return;
+            }
+
+            container.innerHTML = milestones.map(function(m) {
+                const status_class = get_milestone_status_class(m.status);
+                const status_text = get_milestone_status_text(m.status);
+                const type_text = m.type === 'deliverable' ? '(目标)' : '';
+
+                return `
+                    <div class="milestone-item" data-ms-id="${m.id}">
+                        <div class="milestone-header">
+                            <h4>${escape_html(m.name)} ${type_text}</h4>
+                            <div class="milestone-actions">
+                                <span class="status-badge ${status_class}">${status_text}</span>
+                                <button class="btn btn-secondary btn-sm" onclick="manage_milestone_items('${m.id}', '${escape_html(m.name)}')">
+                                    管理行动项
+                                </button>
+                                <button class="btn btn-secondary btn-sm" onclick="edit_milestone_dependencies('${m.id}', '${escape_html(m.name)}')">
+                                    编辑依赖
+                                </button>
+                                <button class="btn btn-secondary btn-sm" onclick="trigger_upload_for_milestone('${m.id}', '${escape_html(m.name)}')">
+                                    上传产出物
+                                </button>
+                            </div>
+                        </div>
+                        ${m.description ? '<p class="milestone-desc">' + escape_html(m.description) + '</p>' : ''}
+                        ${m.deadline ? '<p class="milestone-deadline">截止: ' + format_date(m.deadline) + '</p>' : ''}
+                        <p class="milestone-time">创建于: ${format_date(m.created_at)}</p>
+                        <div class="milestone-items-progress" id="items-progress-${m.id}">
+                            <span class="label">行动项进度:</span>
+                            <span class="value">加载中...</span>
+                        </div>
+                        <div class="milestone-dependencies" id="deps-${m.id}">
+                            <span class="label">前置依赖:</span>
+                            <span class="value">加载中...</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // 加载每个里程碑的行动项和依赖信息
+            milestones.forEach(function(m) {
+                load_milestone_items_progress(m.id);
+                load_milestone_dependencies_info(m.id);
+            });
+        }
+
+        function render_deliverables(deliverables) {
+            const container = document.getElementById('deliverable-list');
+
+            if (deliverables.length === 0) {
+                container.innerHTML = '<div class="empty-state">暂无产出物</div>';
+                return;
+            }
+
+            // 按里程碑分组显示
+            const by_milestone = {};
+            const project_deliverables = [];
+
+            deliverables.forEach(function(d) {
+                if (d.milestone_id) {
+                    if (!by_milestone[d.milestone_id]) {
+                        by_milestone[d.milestone_id] = {
+                            milestone_name: d.milestone_name || '未知里程碑',
+                            deliverables: []
+                        };
+                    }
+                    by_milestone[d.milestone_id].deliverables.push(d);
+                } else {
+                    project_deliverables.push(d);
+                }
+            });
+
+            let html = '';
+
+            // 显示项目级产出物
+            if (project_deliverables.length > 0) {
+                html += '<div class="deliverable-group"><h4>项目产出物</h4>';
+                html += render_deliverable_table(project_deliverables);
+                html += '</div>';
+            }
+
+            // 显示里程碑级产出物
+            for (const mid in by_milestone) {
+                const group = by_milestone[mid];
+                html += '<div class="deliverable-group">';
+                html += '<h4>' + escape_html(group.milestone_name) + '</h4>';
+                html += render_deliverable_table(group.deliverables);
+                html += '</div>';
+            }
+
+            container.innerHTML = html;
+        }
+
+        function render_deliverable_table(deliverables) {
+            return `
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th width="40"><input type="checkbox" onchange="toggle_deliverable_select_all(this, '${deliverables[0].milestone_id || 'project'}')"></th>
+                            <th>文件名</th>
+                            <th>大小</th>
+                            <th>上传时间</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${deliverables.map(function(d) {
+                            return `
+                                <tr data-deliverable-id="${d.id}">
+                                    <td><input type="checkbox" class="deliverable-checkbox" value="${d.id}"></td>
+                                    <td>${escape_html(d.original_name)}</td>
+                                    <td>${format_file_size(d.file_size)}</td>
+                                    <td>${format_date(d.created_at)}</td>
+                                    <td>
+                                        <button class="btn btn-secondary btn-sm" onclick="download_file('${d.id}')">下载</button>
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        // 切换某个组的产出物全选
+        function toggle_deliverable_select_all(checkbox, group_id) {
+            const tbody = checkbox.closest('tbody');
+            const checkboxes = tbody.querySelectorAll('.deliverable-checkbox');
+            checkboxes.forEach(function(cb) {
+                cb.checked = checkbox.checked;
+            });
+        }
+
+        // 批量下载产出物
+        async function batch_download_deliverables() {
+            const checkboxes = document.querySelectorAll('.deliverable-checkbox:checked');
+
+            if (checkboxes.length === 0) {
+                show_message('请先选择要下载的文件', 'error');
+                return;
+            }
+
+            const deliverable_ids = Array.from(checkboxes).map(function(cb) {
+                return cb.value;
+            });
+
+            console.log('[INFO] 批量下载产出物:', deliverable_ids);
+
+            if (deliverable_ids.length === 1) {
+                // 单个文件直接下载
+                download_file(deliverable_ids[0]);
+            } else {
+                // 多个文件，调用打包下载API
+                try {
+                    show_message('正在打包文件，请稍候...', 'info');
+
+                    const response = await fetch('/api/v1/deliverables/batch-download', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        credentials: 'include',  // 确保发送cookie
+                        body: JSON.stringify({ deliverable_ids: deliverable_ids })
+                    });
+
+                    if (response.ok) {
+                        // 下载ZIP文件
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `deliverables_${Date.now()}.zip`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        window.URL.revokeObjectURL(url);
+
+                        show_message('下载成功', 'success');
+                    } else {
+                        const result = await response.json();
+                        show_message(result.message || '打包失败', 'error');
+                    }
+                } catch (e) {
+                    console.log('[ERROR] 批量下载异常:', e);
+                    show_message('下载失败，请稍后重试', 'error');
+                }
+            }
+        }
+
+        function render_members(members) {
+            const container = document.getElementById('member-list');
+
+            if (members.length === 0) {
+                container.innerHTML = '<div class="empty-state">暂无成员</div>';
+                return;
+            }
+
+            container.innerHTML = `
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>用户名</th>
+                            <th>显示名称</th>
+                            <th>角色</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${members.map(function(m) {
+                            return `
+                                <tr>
+                                    <td>${escape_html(m.username || '-')}</td>
+                                    <td>${escape_html(m.display_name)}</td>
+                                    <td>${m.roles ? escape_html(m.roles) : '-'}</td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
+        }
+
+        function switch_tab(tab_name) {
+            // 切换 Tab
+            const tabs = document.querySelectorAll('.tab-button');
+            const contents = document.querySelectorAll('.tab-content');
+
+            tabs.forEach(function(t) {
+                t.classList.remove('active');
+            });
+            contents.forEach(function(c) {
+                c.classList.remove('active');
+            });
+
+            event.target.classList.add('active');
+            document.getElementById('tab-' + tab_name).classList.add('active');
+        }
+
+        // ===== 编辑项目 =====
+        function edit_project() {
+            if (!project_data || !project_data.project) {
+                show_message('项目数据未加载', 'error');
+                return;
+            }
+
+            const project = project_data.project;
+            document.getElementById('edit-project-name').value = project.name;
+            document.getElementById('edit-project-description').value = project.description || '';
+            document.getElementById('edit-project-status').value = project.status;
+
+            document.getElementById('edit-project-modal').style.display = 'flex';
+        }
+
+        function close_edit_project_modal() {
+            document.getElementById('edit-project-modal').style.display = 'none';
+        }
+
+        async function save_project(event) {
+            event.preventDefault();
+
+            const name = document.getElementById('edit-project-name').value.trim();
+            const description = document.getElementById('edit-project-description').value.trim();
+            const status = document.getElementById('edit-project-status').value;
+
+            console.log('[INFO] 更新项目:', name, 'status:', status);
+
+            try {
+                // 更新项目基本信息
+                const result = await api_put('/projects/' + project_id, {
+                    name: name,
+                    description: description
+                });
+
+                if (result.code !== 0) {
+                    show_message(result.message, 'error');
+                    return;
+                }
+
+                // 单独更新状态（使用专门的状态更新API）
+                const statusResult = await api_put('/projects/' + project_id + '/status', {
+                    status: status
+                });
+
+                if (statusResult.code === 0) {
+                    show_message('项目更新成功', 'success');
+                    close_edit_project_modal();
+                    await load_project();
+                } else {
+                    show_message(statusResult.message, 'error');
+                }
+            } catch (e) {
+                console.log('[ERROR] 更新项目异常:', e);
+                show_message('更新失败，请稍后重试', 'error');
+            }
+        }
+
+        // ===== 添加成员 =====
+        let all_available_users = [];
+
+        async function show_add_member_modal() {
+            // 加载可用用户列表
+            try {
+                const result = await api_get('/users');
+                if (result.code === 0) {
+                    all_available_users = result.data;
+
+                    // 过滤掉已经是项目成员的用户
+                    const member_ids = (project_data.members || []).map(function(m) {
+                        return m.user_id;
+                    });
+
+                    const select = document.getElementById('add-member-user');
+                    select.innerHTML = '<option value="">请选择用户</option>';
+
+                    all_available_users.forEach(function(user) {
+                        if (!member_ids.includes(user.id)) {
+                            const display_name = user.display_name || user.username;
+                            const option = document.createElement('option');
+                            option.value = user.id;
+                            option.textContent = display_name + ' (' + user.username + ')';
+                            select.appendChild(option);
+                        }
+                    });
+
+                    document.getElementById('add-member-form').reset();
+                    document.getElementById('add-member-modal').style.display = 'flex';
+                }
+            } catch (e) {
+                console.log('[ERROR] 加载用户列表异常:', e);
+                show_message('加载用户列表失败', 'error');
+            }
+        }
+
+        function close_add_member_modal() {
+            document.getElementById('add-member-modal').style.display = 'none';
+        }
+
+        async function add_member(event) {
+            event.preventDefault();
+
+            const user_id = document.getElementById('add-member-user').value;
+            const roles = document.getElementById('add-member-roles').value.trim();
+
+            if (!user_id) {
+                show_message('请选择用户', 'error');
+                return;
+            }
+
+            const user = all_available_users.find(function(u) { return u.id === user_id; });
+            const display_name = user ? (user.display_name || user.username) : '';
+
+            console.log('[INFO] 添加项目成员:', user_id);
+
+            try {
+                const result = await api_post('/projects/' + project_id + '/members', {
+                    user_id: user_id,
+                    display_name: display_name,
+                    roles: roles
+                });
+
+                if (result.code === 0) {
+                    show_message('成员添加成功', 'success');
+                    close_add_member_modal();
+                    await load_project();
+                } else {
+                    show_message(result.message, 'error');
+                }
+            } catch (e) {
+                console.log('[ERROR] 添加成员异常:', e);
+                show_message('添加失败，请稍后重试', 'error');
+            }
+        }
+
+        async function api_put(endpoint, data) {
+            const url = '/api/v1' + endpoint;
+            console.log('[INFO] PUT ' + url, data);
+
+            try {
+                const response = await fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data || {})
+                });
+                return await response.json();
+            } catch (e) {
+                console.log('[ERROR] PUT 请求失败:', url, e);
+                throw e;
+            }
+        }
+
+        function show_add_milestone_modal() {
+            if (!is_admin) {
+                show_message('只有管理员可以添加里程碑', 'error');
+                return;
+            }
+            document.getElementById('milestone-modal').style.display = 'flex';
+        }
+
+        function close_milestone_modal() {
+            document.getElementById('milestone-modal').style.display = 'none';
+            document.getElementById('milestone-form').reset();
+        }
+
+        async function save_milestone(event) {
+            event.preventDefault();
+
+            const name = document.getElementById('milestone-name').value;
+            const type = document.getElementById('milestone-type').value;
+            const description = document.getElementById('milestone-description').value;
+            const deadline = document.getElementById('milestone-deadline').value;
+
+            console.log('[INFO] 创建里程碑:', name);
+
+            const data = {
+                project_id: project_id,
+                name: name,
+                type: type,
+                description: description,
+                deadline: deadline || null
+            };
+
+            try {
+                const result = await api_post('/milestones', data);
+                if (result.code === 0) {
+                    show_message('里程碑创建成功', 'success');
+                    close_milestone_modal();
+                    await load_project();
+                } else {
+                    show_message(result.message, 'error');
+                }
+            } catch (e) {
+                console.log('[ERROR] 创建里程碑异常:', e);
+                show_message('创建失败，请稍后重试', 'error');
+            }
+        }
+
+        // 当前选中的里程碑ID（用于上传产出物）
+        let current_milestone_id = null;
+        let current_milestone_name = null;
+
+        // 触发里程碑产出物上传
+        function trigger_upload_for_milestone(milestone_id, milestone_name) {
+            current_milestone_id = milestone_id;
+            current_milestone_name = milestone_name;
+
+            console.log('[INFO] 为里程碑上传产出物:', milestone_name);
+
+            // 触发文件选择对话框
+            document.getElementById('milestone-file-input').click();
+        }
+
+        // 上传文件到里程碑
+        async function upload_file_for_milestone(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            if (!current_milestone_id) {
+                show_message('请先选择里程碑', 'error');
+                return;
+            }
+
+            console.log('[INFO] 上传文件到里程碑:', current_milestone_name, file.name);
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                // 构建URL，包含milestone_id参数
+                const url = '/api/v1/projects/' + project_id + '/deliverables/upload?milestone_id=' + current_milestone_id;
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {},
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.code === 0) {
+                    show_message('文件上传成功到: ' + current_milestone_name, 'success');
+                    await load_project();
+                } else {
+                    show_message(result.message, 'error');
+                }
+            } catch (e) {
+                console.log('[ERROR] 上传文件异常:', e);
+                show_message('上传失败，请稍后重试', 'error');
+            }
+
+            // 清理
+            input.value = '';
+            current_milestone_id = null;
+            current_milestone_name = null;
+        }
+
+        // 上传项目级产出物（不关联里程碑）
+        async function upload_file(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            console.log('[INFO] 上传项目级文件:', file.name);
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch('/projects/' + project_id + '/deliverables/upload', {
+                    method: 'POST',
+                    headers: {},
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.code === 0) {
+                    show_message('文件上传成功', 'success');
+                    await load_project();
+                } else {
+                    show_message(result.message, 'error');
+                }
+            } catch (e) {
+                console.log('[ERROR] 上传文件异常:', e);
+                show_message('上传失败，请稍后重试', 'error');
+            }
+
+            input.value = '';
+        }
+
+        async function download_file(deliverable_id) {
+            console.log('[INFO] 下载文件:', deliverable_id);
+            window.open('/api/v1/deliverables/' + deliverable_id + '/download', '_blank');
+        }
+
+        function get_status_class(status) {
+            const classes = {
+                'in_progress': 'status-in-progress',
+                'completed': 'status-completed',
+                'ignored': 'status-paused'
+            };
+            return classes[status] || '';
+        }
+
+        function get_status_text(status) {
+            const texts = {
+                'in_progress': '进行中',
+                'completed': '已完成',
+                'ignored': '已挂起'
+            };
+            return texts[status] || status;
+        }
+
+        function get_milestone_status_class(status) {
+            const classes = {
+                'created': 'status-paused',
+                'waiting': 'status-paused',
+                'in_progress': 'status-in-progress',
+                'paused': 'status-paused',
+                'suspended': 'status-paused',
+                'completed': 'status-completed'
+            };
+            return classes[status] || '';
+        }
+
+        function get_milestone_status_text(status) {
+            const texts = {
+                'created': '已创建',
+                'waiting': '等待中',
+                'in_progress': '进行中',
+                'paused': '已暂停',
+                'suspended': '已挂起',
+                'completed': '已完成'
+            };
+            return texts[status] || status;
+        }
+
+        function escape_html(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function format_date(date_str) {
+            if (!date_str) return '';
+            const date = new Date(date_str);
+            return date.toLocaleString('zh-CN');
+        }
+
+        function format_file_size(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function show_message(message, type) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast toast-' + type;
+            toast.textContent = message;
+            container.appendChild(toast);
+
+            setTimeout(function() {
+                toast.classList.add('show');
+            }, 10);
+
+            setTimeout(function() {
+                toast.classList.remove('show');
+                setTimeout(function() {
+                    container.removeChild(toast);
+                }, 300);
+            }, 3000);
+        }
+
+        async function logout() {
+            if (confirm('确定要退出登录吗？')) {
+                await api_post('/auth/logout');
+                window.location.href = '/login';
+            }
+        }
+
+        // ===== 里程碑行动项管理 =====
+
+        async function load_milestone_items_progress(milestone_id) {
+            const container = document.getElementById('items-progress-' + milestone_id);
+            if (!container) return;
+
+            try {
+                const result = await api_get('/milestones/' + milestone_id + '/items');
+                if (result.code === 0) {
+                    const summary = result.data.summary;
+                    container.innerHTML = `
+                        <span class="label">行动项进度:</span>
+                        <span class="value">${summary.completed}/${summary.total} 已完成</span>
+                    `;
+                }
+            } catch (e) {
+                console.log('[ERROR] 加载行动项失败:', e);
+            }
+        }
+
+        async function load_milestone_dependencies_info(milestone_id) {
+            const container = document.getElementById('deps-' + milestone_id);
+            if (!container) return;
+
+            try {
+                const result = await api_get('/milestones/' + milestone_id + '/dependencies');
+                if (result.code === 0) {
+                    const deps = result.data.dependencies || [];
+                    if (deps.length === 0) {
+                        container.innerHTML = `
+                            <span class="label">前置依赖:</span>
+                            <span class="value">无</span>
+                        `;
+                    } else {
+                        const dep_names = deps.map(d => d.name).join(', ');
+                        container.innerHTML = `
+                            <span class="label">前置依赖:</span>
+                            <span class="value">${escape_html(dep_names)}</span>
+                        `;
+                    }
+                }
+            } catch (e) {
+                console.log('[ERROR] 加载依赖信息失败:', e);
+            }
+        }
+
+        async function manage_milestone_items(milestone_id, milestone_name) {
+            const result = await api_get('/milestones/' + milestone_id + '/items');
+            if (result.code !== 0) {
+                show_message(result.message, 'error');
+                return;
+            }
+
+            const items = result.data.items || [];
+            const summary = result.data.summary || {};
+
+            const modal = document.getElementById('items-modal');
+            const list = document.getElementById('items-list');
+
+            list.innerHTML = items.map(function(item) {
+                const status_class = item.status === 'completed' ? 'status-completed' :
+                                   item.status === 'in_progress' ? 'status-in-progress' : 'status-paused';
+                return `
+                    <div class="item-row" data-item-id="${item.id}">
+                        <input type="checkbox" class="item-checkbox" ${item.status === 'completed' ? 'checked' : ''}>
+                        <input type="text" class="item-title" value="${escape_html(item.title)}" ${item.source_type !== 'manual' ? 'readonly' : ''}>
+                        <select class="item-status">
+                            <option value="pending" ${item.status === 'pending' ? 'selected' : ''}>待处理</option>
+                            <option value="in_progress" ${item.status === 'in_progress' ? 'selected' : ''}>进行中</option>
+                            <option value="completed" ${item.status === 'completed' ? 'selected' : ''}>已完成</option>
+                        </select>
+                        ${item.source_type === 'manual' ? '<button class="btn-delete-item" onclick="delete_milestone_item(\'' + item.id + '\',\'' + milestone_id + '\')">×</button>' : '<span class="item-source">' + get_item_source_text(item.source_type) + '</span>'}
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('items-milestone-name').textContent = milestone_name;
+            document.getElementById('items-milestone-id').value = milestone_id;
+            modal.style.display = 'flex';
+        }
+
+        function get_item_source_text(source_type) {
+            const types = {
+                'manual': '手动',
+                'upload': '上传',
+                'status_change': '状态变更',
+                'system': '系统'
+            };
+            return types[source_type] || source_type;
+        }
+
+        function close_items_modal() {
+            document.getElementById('items-modal').style.display = 'none';
+        }
+
+        async function add_milestone_item() {
+            const milestone_id = document.getElementById('items-milestone-id').value;
+            const title = prompt('请输入行动项标题:');
+            if (!title) return;
+
+            const result = await api_post('/milestones/' + milestone_id + '/items', {
+                title: title,
+                source_type: 'manual'
+            });
+
+            if (result.code === 0) {
+                show_message('行动项添加成功', 'success');
+                await manage_milestone_items(milestone_id, document.getElementById('items-milestone-name').textContent);
+            } else {
+                show_message(result.message, 'error');
+            }
+        }
+
+        async function delete_milestone_item(item_id, milestone_id) {
+            if (!confirm('确定要删除这个行动项吗？')) return;
+
+            const result = await api_delete('/milestone-items/' + item_id);
+            if (result.code === 0) {
+                show_message('行动项删除成功', 'success');
+                await manage_milestone_items(milestone_id, document.getElementById('items-milestone-name').textContent);
+            } else {
+                show_message(result.message, 'error');
+            }
+        }
+
+        async function save_items_changes() {
+            const milestone_id = document.getElementById('items-milestone-id').value;
+            const item_rows = document.querySelectorAll('.item-row');
+
+            for (const row of item_rows) {
+                const item_id = row.dataset.itemId;
+                const title = row.querySelector('.item-title').value;
+                const status = row.querySelector('.item-status').value;
+                const checkbox = row.querySelector('.item-checkbox');
+
+                if (checkbox.checked && status !== 'completed') {
+                    status = 'completed';
+                } else if (!checkbox.checked && status === 'completed') {
+                    status = 'in_progress';
+                }
+
+                await api_put('/milestone-items/' + item_id, {
+                    title: title,
+                    status: status
+                });
+            }
+
+            show_message('保存成功', 'success');
+            close_items_modal();
+            load_milestone_items_progress(milestone_id);
+        }
+
+        // ===== 里程碑依赖关系管理 =====
+
+        async function edit_milestone_dependencies(milestone_id, milestone_name) {
+            const result = await api_get('/milestones/' + milestone_id + '/dependencies');
+            if (result.code !== 0) {
+                show_message(result.message, 'error');
+                return;
+            }
+
+            const deps = result.data.dependencies || [];
+            const available = result.data.available || [];
+            const is_deliverable = result.data.is_deliverable || false;
+
+            const modal = document.getElementById('deps-modal');
+            const list = document.getElementById('deps-available-list');
+
+            const dep_ids = deps.map(d => d.id);
+
+            list.innerHTML = available.map(function(ms) {
+                const checked = dep_ids.includes(ms.id) ? 'checked' : '';
+                const type_label = ms.type === 'deliverable' ? '(目标)' : '';
+                return `
+                    <label>
+                        <input type="checkbox" class="dep-checkbox" value="${ms.id}" ${checked}>
+                        ${escape_html(ms.name + ' ' + type_label)} - ${get_milestone_status_text(ms.status)}
+                    </label>
+                `;
+            }).join('');
+
+            document.getElementById('deps-milestone-name').textContent = milestone_name;
+            document.getElementById('deps-milestone-id').value = milestone_id;
+            document.getElementById('deps-is-deliverable').value = is_deliverable;
+
+            const requirement = document.getElementById('deps-requirement');
+            if (is_deliverable) {
+                requirement.textContent = '目标（验收点）必须有至少1个前置里程碑';
+                requirement.style.display = 'block';
+            } else {
+                requirement.style.display = 'none';
+            }
+
+            modal.style.display = 'flex';
+        }
+
+        function close_deps_modal() {
+            document.getElementById('deps-modal').style.display = 'none';
+        }
+
+        async function save_dependencies() {
+            const milestone_id = document.getElementById('deps-milestone-id').value;
+            const is_deliverable = document.getElementById('deps-is-deliverable').value === 'true';
+
+            const checked_boxes = document.querySelectorAll('.dep-checkbox:checked');
+            const depends_on_ids = Array.from(checked_boxes).map(cb => cb.value);
+
+            if (is_deliverable && depends_on_ids.length === 0) {
+                show_message('目标（验收点）必须有至少1个前置里程碑', 'error');
+                return;
+            }
+
+            // 先获取当前的依赖
+            const current_result = await api_get('/milestones/' + milestone_id + '/dependencies');
+            const current_deps = current_result.data.dependencies || [];
+            const current_dep_ids = current_deps.map(d => d.id);
+
+            // 找出需要添加的
+            const to_add = depends_on_ids.filter(id => !current_dep_ids.includes(id));
+            // 找出需要删除的
+            const to_remove = current_dep_ids.filter(id => !depends_on_ids.includes(id));
+
+            if (to_add.length > 0) {
+                const add_result = await api_post('/milestones/' + milestone_id + '/dependencies', {
+                    depends_on_ids: to_add
+                });
+                if (add_result.code !== 0) {
+                    show_message(add_result.message, 'error');
+                    return;
+                }
+            }
+
+            if (to_remove.length > 0) {
+                const remove_result = await api_delete('/milestones/' + milestone_id + '/dependencies', {
+                    depends_on_ids: to_remove
+                });
+                if (remove_result.code !== 0) {
+                    show_message(remove_result.message, 'error');
+                    return;
+                }
+            }
+
+            show_message('依赖关系保存成功', 'success');
+            close_deps_modal();
+            load_milestone_dependencies_info(milestone_id);
+        }
+
+        async function api_delete(endpoint, data) {
+            const url = '/api/v1' + endpoint;
+            console.log('[INFO] DELETE ' + url, data);
+
+            try {
+                const response = await fetch(url, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data || {})
+                });
+                return await response.json();
+            } catch (e) {
+                console.log('[ERROR] DELETE 请求失败:', url, e);
+                throw e;
+            }
+        }
+
+        async function api_put(endpoint, data) {
+            const url = '/api/v1' + endpoint;
+            console.log('[INFO] PUT ' + url, data);
+
+            try {
+                const response = await fetch(url, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data || {})
+                });
+                return await response.json();
+            } catch (e) {
+                console.log('[ERROR] PUT 请求失败:', url, e);
+                throw e;
+            }
+        }
+
+        // ===== 模态框拖动功能 =====
+        let isDragging = false;
+        let currentModal = null;
+        let dragOffset = { x: 0, y: 0 };
+
+        function makeModalDraggable(modalId, headerId, contentId) {
+            const modal = document.getElementById(modalId);
+            const header = document.getElementById(headerId);
+            const content = document.getElementById(contentId);
+
+            if (!modal || !header || !content) return;
+
+            header.addEventListener('mousedown', function(e) {
+                // 只响应左键
+                if (e.button !== 0) return;
+
+                isDragging = true;
+                currentModal = content;
+
+                // 计算鼠标相对于内容框的偏移
+                const rect = content.getBoundingClientRect();
+                dragOffset.x = e.clientX - rect.left;
+                dragOffset.y = e.clientY - rect.top;
+
+                // 防止文本选中
+                e.preventDefault();
+
+                // 改变光标样式
+                header.style.cursor = 'grabbing';
+            });
+
+            document.addEventListener('mousemove', function(e) {
+                if (!isDragging || currentModal !== content) return;
+
+                // 计算新位置
+                let newX = e.clientX - dragOffset.x;
+                let newY = e.clientY - dragOffset.y;
+
+                // 限制在视口内
+                const viewportWidth = window.innerWidth;
+                const viewportHeight = window.innerHeight;
+                const modalRect = content.getBoundingClientRect();
+
+                // 确保不会超出边界
+                if (newX < 0) newX = 0;
+                if (newY < 0) newY = 0;
+                if (newX + modalRect.width > viewportWidth) {
+                    newX = viewportWidth - modalRect.width;
+                }
+                if (newY + modalRect.height > viewportHeight) {
+                    newY = viewportHeight - modalRect.height;
+                }
+
+                // 应用新位置（使用绝对定位）
+                content.style.position = 'absolute';
+                content.style.left = newX + 'px';
+                content.style.top = newY + 'px';
+                content.style.margin = '0';
+            });
+
+            document.addEventListener('mouseup', function() {
+                if (isDragging) {
+                    isDragging = false;
+                    currentModal = null;
+                    if (header) {
+                        header.style.cursor = 'move';
+                    }
+                }
+            });
+        }
+
+        // 页面加载时初始化拖动功能
+        document.addEventListener('DOMContentLoaded', function() {
+            makeModalDraggable('milestone-modal', 'milestone-modal-header', 'milestone-modal-content');
+        });
+
+        // 重置模态框位置（关闭时）
+        const originalCloseModal = close_milestone_modal;
+        close_milestone_modal = function() {
+            const content = document.getElementById('milestone-modal-content');
+            // 重置位置
+            content.style.position = '';
+            content.style.left = '';
+            content.style.top = '';
+            content.style.margin = '';
+            originalCloseModal();
+        };
+
+    </script>
+</body>
+</html>

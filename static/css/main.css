@@ -1,0 +1,779 @@
+/**
+ * YourWork - 主样式表
+ * 全部使用原生 CSS，无第三方依赖
+ */
+
+/* ===== 重置样式 ===== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #333;
+    background: #f5f5f5;
+}
+
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+/* ===== 布局 ===== */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #ddd;
+}
+
+.page-header h1 {
+    font-size: 28px;
+    color: #2c3e50;
+}
+
+.page-header-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+/* ===== 导航栏 ===== */
+.navbar {
+    background: #2c3e50;
+    color: #fff;
+    padding: 0 20px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.navbar-brand a {
+    font-size: 18px;
+    font-weight: bold;
+    color: #fff;
+}
+
+.navbar-menu a {
+    color: #fff;
+    margin-left: 20px;
+    transition: color 0.2s;
+}
+
+.navbar-menu a:hover {
+    color: #3498db;
+}
+
+.user-info {
+    margin-right: 15px;
+}
+
+/* ===== 按钮样式 ===== */
+.btn {
+    display: inline-block;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    text-align: center;
+    transition: all 0.2s;
+}
+
+.btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background: #3498db;
+    color: #fff;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: #2980b9;
+}
+
+.btn-secondary {
+    background: #95a5a6;
+    color: #fff;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: #7f8c8d;
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 12px;
+}
+
+/* ===== 表单样式 ===== */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #555;
+}
+
+.form-input,
+.form-select,
+.form-textarea {
+    width: 100%;
+    max-width: 500px;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+/* 全宽输入框（用于特殊场景） */
+.form-input.full-width,
+.form-select.full-width,
+.form-textarea.full-width {
+    max-width: 100%;
+}
+
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
+    outline: none;
+    border-color: #3498db;
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+}
+
+.form-textarea {
+    resize: vertical;
+    font-family: inherit;
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 30px;
+}
+
+/* ===== 卡片样式 ===== */
+.card {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.form-card {
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.form-card h1 {
+    margin-bottom: 30px;
+    color: #2c3e50;
+}
+
+/* ===== 表格样式 ===== */
+.table-container {
+    overflow-x: auto;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.table th,
+.table td {
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.table th {
+    background: #f8f9fa;
+    font-weight: 500;
+    color: #555;
+}
+
+.table tbody tr:hover {
+    background: #f8f9fa;
+}
+
+.text-center {
+    text-align: center;
+}
+
+/* ===== 状态标签 ===== */
+.status-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-in-progress {
+    background: #d4edda;
+    color: #155724;
+}
+
+.status-completed {
+    background: #cce5ff;
+    color: #004085;
+}
+
+.status-paused {
+    background: #fff3cd;
+    color: #856404;
+}
+
+/* ===== 筛选和搜索 ===== */
+.filter-bar {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+    align-items: center;
+}
+
+.filter-group {
+    flex-shrink: 0;
+}
+
+.search-group {
+    display: flex;
+    flex: 1;
+    gap: 10px;
+}
+
+.search-group .form-input {
+    flex: 1;
+}
+
+/* ===== 分页 ===== */
+.pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #ddd;
+}
+
+.pagination-info {
+    color: #666;
+}
+
+.pagination-pages {
+    display: flex;
+    gap: 5px;
+}
+
+.pagination-pages .btn {
+    padding: 6px 12px;
+}
+
+/* ===== 内容区域 ===== */
+.content-section {
+    margin-bottom: 30px;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.section-header h2 {
+    font-size: 20px;
+    color: #2c3e50;
+}
+
+/* ===== 空状态 ===== */
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #999;
+}
+
+.empty-state a {
+    color: #3498db;
+    text-decoration: underline;
+}
+
+/* ===== 加载状态 ===== */
+.loading {
+    text-align: center;
+    padding: 40px;
+    color: #999;
+}
+
+/* ===== 文本辅助类 ===== */
+.text-muted {
+    color: #666;
+}
+
+/* ===== 用户信息徽章 ===== */
+.unread-badge {
+    padding: 4px 12px;
+    background: #e74c3c;
+    color: #fff;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+/* ===== 模态框 ===== */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+}
+
+/* 当模态框显示时，使用flex布局居中 */
+.modal[style*="flex"] {
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: #fff;
+    border-radius: 8px;
+    width: 100%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* 模态框标题栏 - 可拖动 */
+.modal-header {
+    cursor: move;
+    user-select: none;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #2c3e50;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #999;
+    line-height: 1;
+    padding: 0;
+    width: 24px;
+}
+
+.modal-close:hover {
+    color: #333;
+}
+
+.modal-body {
+    padding: 20px;
+    word-break: break-word;
+    overflow-wrap: break-word;
+    overflow-x: auto;
+}
+
+.modal-footer {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    padding: 20px;
+    border-top: 1px solid #eee;
+}
+
+/* ===== 复选框组 ===== */
+.checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.checkbox-group label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.checkbox-group input[type="checkbox"] {
+    margin-right: 8px;
+    width: 16px;
+    height: 16px;
+}
+
+/* ===== Toast 消息提示 ===== */
+.toast-container {
+    position: fixed;
+    top: 70px;
+    right: 20px;
+    z-index: 9999;
+}
+
+.toast {
+    background: #333;
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: all 0.3s;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.toast-success {
+    background: #27ae60;
+}
+
+.toast-error {
+    background: #e74c3c;
+}
+
+.toast-warning {
+    background: #f39c12;
+}
+
+.toast-info {
+    background: #3498db;
+}
+
+/* ===== 里程碑样式 ===== */
+.milestone-item {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 12px;
+}
+
+.milestone-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.milestone-header h4 {
+    margin: 0;
+    font-size: 16px;
+    color: #2c3e50;
+}
+
+.milestone-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.milestone-desc {
+    color: #666;
+    margin: 8px 0;
+    font-size: 14px;
+}
+
+.milestone-deadline {
+    color: #e67e22;
+    font-size: 13px;
+    margin: 4px 0;
+}
+
+.milestone-time {
+    color: #999;
+    font-size: 12px;
+    margin: 8px 0 0 0;
+}
+
+/* ===== 产出物分组样式 ===== */
+.deliverable-group {
+    margin-bottom: 24px;
+}
+
+.deliverable-group h4 {
+    color: #2c3e50;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #3498db;
+}
+
+/* ===== 里程碑行动项和依赖样式 ===== */
+.milestone-items-progress,
+.milestone-dependencies {
+    margin-top: 8px;
+    font-size: 13px;
+    color: #666;
+}
+
+.milestone-items-progress .label,
+.milestone-dependencies .label {
+    font-weight: 500;
+    margin-right: 8px;
+}
+
+/* 行动项列表 */
+.items-list {
+    max-height: 300px;
+    overflow-y: auto;
+    margin-bottom: 10px;
+}
+
+.item-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+}
+
+.item-row:last-child {
+    border-bottom: none;
+}
+
+.item-checkbox {
+    width: 16px;
+    height: 16px;
+}
+
+.item-title {
+    flex: 1;
+    padding: 6px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.item-title[readonly] {
+    background: #f5f5f5;
+    color: #666;
+}
+
+.item-status {
+    padding: 6px 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    background: #fff;
+}
+
+.btn-delete-item {
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: #e74c3c;
+    color: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+}
+
+.btn-delete-item:hover {
+    background: #c0392b;
+}
+
+.item-source {
+    font-size: 12px;
+    color: #999;
+    padding: 2px 6px;
+    background: #f5f5f5;
+    border-radius: 4px;
+}
+
+/* 依赖列表 */
+.deps-list {
+    max-height: 250px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+}
+
+.deps-list label {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+}
+
+.deps-list label:last-child {
+    border-bottom: none;
+}
+
+.deps-list label:hover {
+    background: #f8f9fa;
+}
+
+.deps-list input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin-right: 10px;
+}
+
+/* ===== 里程碑状态汇总面板 ===== */
+.milestone-status-panel {
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.milestone-status-panel h4 {
+    margin: 0 0 15px 0;
+    color: #2c3e50;
+    font-size: 18px;
+}
+
+.status-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 6px;
+}
+
+.stat-value {
+    display: block;
+    font-size: 24px;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.stat-completed {
+    color: #27ae60 !important;
+}
+
+.stat-in-progress {
+    color: #3498db !important;
+}
+
+.stat-created {
+    color: #95a5a6 !important;
+}
+
+.stat-suspended {
+    color: #f39c12 !important;
+}
+
+.stat-blocked {
+    color: #e74c3c !important;
+}
+
+.stat-label {
+    display: block;
+    font-size: 12px;
+    color: #666;
+    margin-top: 5px;
+}
+
+.completion-rate {
+    text-align: center;
+    padding: 10px;
+    background: #e8f5e9;
+    border-radius: 6px;
+}
+
+.completion-label {
+    font-size: 14px;
+    color: #666;
+    margin-right: 10px;
+}
+
+.completion-value {
+    font-size: 20px;
+    font-weight: bold;
+    color: #27ae60;
+}
+
+/* ===== 响应式 ===== */
+@media (max-width: 768px) {
+    .container {
+        padding: 10px;
+    }
+
+    .page-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+    }
+
+    .navbar-menu {
+        display: none;
+    }
+
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .project-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .pagination {
+        flex-direction: column;
+        gap: 15px;
+        align-items: center;
+    }
+
+    .milestone-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .milestone-actions {
+        width: 100%;
+        justify-content: space-between;
+    }
+}

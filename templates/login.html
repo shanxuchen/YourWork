@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - YourWork</title>
+    <link rel="stylesheet" href="/static/css/main.css">
+    <style>
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .login-card {
+            background: #fff;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        .login-card h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+        .login-footer {
+            text-align: center;
+            margin-top: 20px;
+            color: #666;
+        }
+        .login-footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        .login-footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <h1>YourWork</h1>
+        <h2 style="text-align: center; margin-bottom: 30px; color: #666;">企业项目管理系统</h2>
+
+        <form id="login-form" onsubmit="handle_login(event)">
+            <div class="form-group">
+                <label class="form-label" for="username">用户名</label>
+                <input
+                    type="text"
+                    id="username"
+                    name="username"
+                    class="form-input"
+                    placeholder="请输入用户名"
+                    required
+                    autocomplete="username"
+                >
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="password">密码</label>
+                <input
+                    type="password"
+                    id="password"
+                    name="password"
+                    class="form-input"
+                    placeholder="请输入密码"
+                    required
+                    autocomplete="current-password"
+                >
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 10px;">
+                登录
+            </button>
+        </form>
+
+        <div id="message" style="margin-top: 20px; text-align: center; color: #e74c3c;"></div>
+    </div>
+
+    <script src="/static/js/api.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('[INFO] 登录页面加载完成');
+
+            // 检查是否已登录
+            check_login_status();
+        });
+
+        async function check_login_status() {
+            try {
+                const result = await api_get('/auth/profile');
+                if (result.code === 0) {
+                    console.log('[INFO] 已登录，跳转到首页');
+                    window.location.href = '/';
+                }
+            } catch (e) {
+                console.log('[INFO] 未登录');
+            }
+        }
+
+        async function handle_login(event) {
+            event.preventDefault();
+
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            const message_el = document.getElementById('message');
+
+            console.log('[INFO] 登录尝试:', username);
+
+            message_el.textContent = '登录中...';
+
+            try {
+                const result = await api_post('/auth/login', {
+                    username: username,
+                    password: password
+                });
+
+                if (result.code === 0) {
+                    console.log('[INFO] 登录成功');
+                    message_el.style.color = '#27ae60';
+                    message_el.textContent = '登录成功，正在跳转...';
+                    setTimeout(function() {
+                        window.location.href = '/';
+                    }, 500);
+                } else {
+                    console.log('[WARNING] 登录失败:', result.message);
+                    message_el.style.color = '#e74c3c';
+                    message_el.textContent = result.message;
+                }
+            } catch (e) {
+                console.log('[ERROR] 登录异常:', e);
+                message_el.style.color = '#e74c3c';
+                message_el.textContent = '登录失败，请稍后重试';
+            }
+        }
+    </script>
+</body>
+</html>
