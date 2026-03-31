@@ -24,6 +24,8 @@ from fastapi.middleware.cors import CORSMiddleware
 DB_PATH = "data/yourwork.db"
 LOG_PATH = "logs/app.log"
 UPLOAD_PATH = "uploads/projects"
+SERVER_HOST = "0.0.0.0"  # 监听地址
+SERVER_PORT = 8001  # 服务端口号
 
 # ===== 会话配置常量 =====
 SESSION_TOKEN_LENGTH = 64  # 会话令牌长度
@@ -2517,4 +2519,4 @@ async def startup_event():
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=8001, log_level="info")
+    uvicorn.run(app, host=SERVER_HOST, port=SERVER_PORT, log_level="info")
