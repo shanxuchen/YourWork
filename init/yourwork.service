@@ -1,0 +1,14 @@
+[Unit]
+Description=YourWork 企业项目管理系统
+After=network.target
+
+[Service]
+Type=simple
+User=youruser
+WorkingDirectory=/home/youruser/YourWork
+ExecStart=/usr/bin/python3 /home/youruser/YourWork/main.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
