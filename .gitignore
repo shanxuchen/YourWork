@@ -25,6 +25,7 @@ __pycache__/
 .Python
 
 # Testing & coverage
+test/
 .pytest_cache/
 .coverage
 htmlcov/
@@ -36,6 +37,9 @@ coverage.xml
 # Sensitive files (admin credentials)
 ADMIN_CREDENTIALS.txt
 *.credentials
+
+# AI Assistant
+.claude/
 
 # IDE & Editor
 .vscode/
