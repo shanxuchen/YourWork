@@ -4,10 +4,13 @@
 
 set -e
 
-# ===== 配置（按实际情况修改）=====
+# ===== 配置 =====
 APP_NAME="yourwork"
-APP_DIR="/home/$(whoami)/YourWork"
-PYTHON_BIN=$(which python3)
+# 自动检测项目目录（基于脚本所在位置）
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+APP_DIR="$(dirname "${SCRIPT_DIR}")"
+# sudo 下 which 会解析到系统 Python，需要用真实用户的 Python 路径
+PYTHON_BIN=$(sudo -u "${SUDO_USER:-$(whoami)}" which python3)
 SERVICE_FILE="/etc/systemd/system/${APP_NAME}.service"
 
 echo "========================================="
@@ -25,22 +28,18 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
-# 检查目录是否存在
-if [ ! -d "${APP_DIR}" ]; then
-  echo "错误: 目录 ${APP_DIR} 不存在"
-  echo "请先 clone 项目或修改脚本中的 APP_DIR"
-  exit 1
-fi
-
 # 检查 main.py 是否存在
 if [ ! -f "${APP_DIR}/main.py" ]; then
   echo "错误: ${APP_DIR}/main.py 不存在"
+  echo "请确认脚本位于 YourWork/init/ 目录下"
   exit 1
 fi
 
-# 获取实际运行用户（即使 sudo 也能获取真实用户）
+# 获取实际运行用户（sudo 下取真实用户）
 REAL_USER="${SUDO_USER:-$(whoami)}"
+REAL_HOME=$(eval echo "~${REAL_USER}")
 echo " 运行用户: ${REAL_USER}"
+echo " 用户目录: ${REAL_HOME}"
 echo ""
 
 # 生成服务文件（替换模板中的占位符）
