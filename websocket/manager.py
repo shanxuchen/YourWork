@@ -159,8 +159,10 @@ class WebSocketManager:
             exclude_user: 要排除的用户ID（发送者）
         """
         try:
-            conn = sqlite3.connect("data/yourwork.db")
+            conn = sqlite3.connect("data/yourwork.db", timeout=30)
             conn.row_factory = sqlite3.Row
+            conn.execute("PRAGMA journal_mode=WAL")
+            conn.execute("PRAGMA busy_timeout=30000")
             cursor = conn.execute(
                 "SELECT user_id FROM project_members WHERE project_id = ?",
                 (project_id,)
@@ -236,8 +238,10 @@ class WebSocketManager:
         # 执行处理逻辑
         try:
             # 获取数据库连接
-            conn = sqlite3.connect("data/yourwork.db")
+            conn = sqlite3.connect("data/yourwork.db", timeout=30)
             conn.row_factory = sqlite3.Row
+            conn.execute("PRAGMA journal_mode=WAL")
+            conn.execute("PRAGMA busy_timeout=30000")
 
             # 获取客户端IP
             client_ip = None

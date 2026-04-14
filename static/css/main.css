@@ -116,6 +116,17 @@ a {
     background: #7f8c8d;
 }
 
+.btn-danger {
+    background: #e74c3c;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+}
+
+.btn-danger:hover:not(:disabled) {
+    background: #c0392b;
+}
+
 .btn-sm {
     padding: 6px 12px;
     font-size: 12px;
@@ -138,7 +149,7 @@ a {
 .form-textarea {
     width: 100%;
     max-width: 500px;
-    padding: 10px 12px;
+    padding: 10px 16px;
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 14px;
@@ -369,8 +380,21 @@ a {
     width: 100%;
     max-width: 500px;
     max-height: 90vh;
-    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+}
+
+.modal-content form {
+    padding: 20px 20px 0 20px;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+}
+
+.modal-content form .modal-footer {
+    margin: 0 -20px;
+    flex-shrink: 0;
 }
 
 /* 模态框标题栏 - 可拖动 */
@@ -385,6 +409,7 @@ a {
     align-items: center;
     padding: 20px;
     border-bottom: 1px solid #eee;
+    flex-shrink: 0;
 }
 
 .modal-header h3 {
@@ -412,6 +437,9 @@ a {
     word-break: break-word;
     overflow-wrap: break-word;
     overflow-x: auto;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
 }
 
 .modal-footer {
@@ -420,6 +448,7 @@ a {
     justify-content: flex-end;
     padding: 20px;
     border-top: 1px solid #eee;
+    flex-shrink: 0;
 }
 
 /* ===== 复选框组 ===== */

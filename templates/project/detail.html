@@ -107,11 +107,6 @@
             </div>
         </section>
 
-    </main>
-
-    <!-- 隐藏的文件上传输入框 -->
-    <input type="file" id="milestone-file-input" style="display: none;" onchange="upload_file_for_milestone(this)">
-
         <!-- 成员 Tab -->
         <section id="tab-members" class="tab-content">
             <div class="tab-header">
@@ -122,7 +117,11 @@
                 <div class="loading">加载中...</div>
             </div>
         </section>
+
     </main>
+
+    <!-- 隐藏的文件上传输入框 -->
+    <input type="file" id="milestone-file-input" style="display: none;" onchange="upload_file_for_milestone(this)">
 
     <!-- 添加里程碑弹窗 -->
     <div id="milestone-modal" class="modal">
@@ -151,8 +150,49 @@
                     <label class="form-label">截止日期</label>
                     <input type="datetime-local" id="milestone-deadline" class="form-input">
                 </div>
+                <div class="form-group" id="milestone-deps-group" style="display: none;">
+                    <label class="form-label">前置依赖</label>
+                    <div id="milestone-deps-list" style="max-height: 200px; overflow-y: auto;"></div>
+                    <small id="milestone-deps-hint" style="color: #e74c3c; display: none;">
+                        目标（验收点）必须有至少1个前置里程碑
+                    </small>
+                </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" onclick="close_milestone_modal()">取消</button>
+                    <button type="submit" class="btn btn-primary">保存</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 编辑里程碑弹窗 -->
+    <div id="edit-milestone-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>编辑里程碑</h3>
+                <button class="modal-close" onclick="close_edit_milestone_modal()">&times;</button>
+            </div>
+            <form id="edit-milestone-form" onsubmit="save_edit_milestone(event)">
+                <input type="hidden" id="edit-milestone-id">
+                <div class="form-group">
+                    <label class="form-label">名称 *</label>
+                    <input type="text" id="edit-milestone-name" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">描述</label>
+                    <textarea id="edit-milestone-description" class="form-textarea" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">状态</label>
+                    <select id="edit-milestone-status" class="form-select">
+                        <option value="created">已创建</option>
+                        <option value="in_progress">进行中</option>
+                        <option value="completed">已完成</option>
+                        <option value="suspended">已挂起</option>
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="close_edit_milestone_modal()">取消</button>
                     <button type="submit" class="btn btn-primary">保存</button>
                 </div>
             </form>
@@ -390,6 +430,9 @@
                             <h4>${escape_html(m.name)} ${type_text}</h4>
                             <div class="milestone-actions">
                                 <span class="status-badge ${status_class}">${status_text}</span>
+                                <button class="btn btn-secondary btn-sm" onclick="show_edit_milestone_modal('${m.id}')">
+                                    编辑
+                                </button>
                                 <button class="btn btn-secondary btn-sm" onclick="manage_milestone_items('${m.id}', '${escape_html(m.name)}')">
                                     管理行动项
                                 </button>
@@ -398,6 +441,9 @@
                                 </button>
                                 <button class="btn btn-secondary btn-sm" onclick="trigger_upload_for_milestone('${m.id}', '${escape_html(m.name)}')">
                                     上传产出物
+                                </button>
+                                <button class="btn btn-danger btn-sm" onclick="delete_milestone('${m.id}', '${escape_html(m.name)}')">
+                                    删除
                                 </button>
                             </div>
                         </div>
@@ -773,8 +819,49 @@
                 show_message('只有管理员可以添加里程碑', 'error');
                 return;
             }
+
+            // 清空表单
+            document.getElementById('milestone-form').reset();
+
+            // 渲染前置依赖选项
+            const deps_group = document.getElementById('milestone-deps-group');
+            const deps_list = document.getElementById('milestone-deps-list');
+            const deps_hint = document.getElementById('milestone-deps-hint');
+
+            deps_hint.style.display = 'none';
+
+            if (project_data && project_data.milestones && project_data.milestones.length > 0) {
+                deps_list.innerHTML = project_data.milestones.map(function(m) {
+                    const type_label = m.type === 'deliverable' ? '(目标)' : '';
+                    const status_text = get_milestone_status_text(m.status);
+                    return '<label style="display: block; margin-bottom: 6px;">'
+                        + '<input type="checkbox" class="new-dep-checkbox" value="' + m.id + '"> '
+                        + escape_html(m.name + ' ' + type_label) + ' - ' + status_text
+                        + '</label>';
+                }).join('');
+                deps_group.style.display = 'block';
+            } else {
+                deps_list.innerHTML = '';
+                deps_group.style.display = 'none';
+            }
+
             document.getElementById('milestone-modal').style.display = 'flex';
         }
+
+        // 监听里程碑类型切换，显示/隐藏依赖提示
+        document.addEventListener('DOMContentLoaded', function() {
+            var type_select = document.getElementById('milestone-type');
+            if (type_select) {
+                type_select.addEventListener('change', function() {
+                    var hint = document.getElementById('milestone-deps-hint');
+                    if (this.value === 'acceptance') {
+                        hint.style.display = 'block';
+                    } else {
+                        hint.style.display = 'none';
+                    }
+                });
+            }
+        });
 
         function close_milestone_modal() {
             document.getElementById('milestone-modal').style.display = 'none';
@@ -789,6 +876,15 @@
             const description = document.getElementById('milestone-description').value;
             const deadline = document.getElementById('milestone-deadline').value;
 
+            // 验收目标类型检查依赖选择
+            const checked_deps = document.querySelectorAll('.new-dep-checkbox:checked');
+            if (type === 'acceptance' && checked_deps.length === 0) {
+                var deps_group = document.getElementById('milestone-deps-group');
+                if (deps_group.style.display !== 'none') {
+                    show_message('目标（验收点）建议选择至少1个前置里程碑', 'info');
+                }
+            }
+
             console.log('[INFO] 创建里程碑:', name);
 
             const data = {
@@ -802,6 +898,22 @@
             try {
                 const result = await api_post('/milestones', data);
                 if (result.code === 0) {
+                    const milestone_id = result.data.milestone_id;
+
+                    // 如果用户选择了前置依赖，创建后立即添加
+                    if (checked_deps.length > 0 && milestone_id) {
+                        const dep_ids = Array.from(checked_deps).map(function(cb) {
+                            return cb.value;
+                        });
+                        try {
+                            await api_post('/milestones/' + milestone_id + '/dependencies', {
+                                depends_on_ids: dep_ids
+                            });
+                        } catch (dep_err) {
+                            console.log('[WARNING] 添加依赖失败:', dep_err);
+                        }
+                    }
+
                     show_message('里程碑创建成功', 'success');
                     close_milestone_modal();
                     await load_project();
@@ -811,6 +923,88 @@
             } catch (e) {
                 console.log('[ERROR] 创建里程碑异常:', e);
                 show_message('创建失败，请稍后重试', 'error');
+            }
+        }
+
+        // ===== 编辑里程碑 =====
+
+        async function show_edit_milestone_modal(milestone_id) {
+            try {
+                const result = await api_get('/milestones/' + milestone_id);
+                if (result.code !== 0) {
+                    show_message(result.message, 'error');
+                    return;
+                }
+
+                const m = result.data;
+                document.getElementById('edit-milestone-id').value = m.id;
+                document.getElementById('edit-milestone-name').value = m.name || '';
+                document.getElementById('edit-milestone-description').value = m.description || '';
+                document.getElementById('edit-milestone-status').value = m.status || 'created';
+
+                document.getElementById('edit-milestone-modal').style.display = 'flex';
+            } catch (e) {
+                console.log('[ERROR] 加载里程碑详情失败:', e);
+                show_message('加载里程碑信息失败', 'error');
+            }
+        }
+
+        function close_edit_milestone_modal() {
+            document.getElementById('edit-milestone-modal').style.display = 'none';
+        }
+
+        async function save_edit_milestone(event) {
+            event.preventDefault();
+
+            const milestone_id = document.getElementById('edit-milestone-id').value;
+            const name = document.getElementById('edit-milestone-name').value.trim();
+            const description = document.getElementById('edit-milestone-description').value.trim();
+            const status = document.getElementById('edit-milestone-status').value;
+
+            console.log('[INFO] 更新里程碑:', milestone_id);
+
+            try {
+                const result = await api_put('/milestones/' + milestone_id, {
+                    name: name,
+                    description: description,
+                    status: status
+                });
+
+                if (result.code === 0) {
+                    show_message('里程碑更新成功', 'success');
+                    close_edit_milestone_modal();
+                    await load_project();
+                } else {
+                    var msg = result.message;
+                    if (result.errors && result.errors.length > 0) {
+                        msg += '：' + result.errors.join('；');
+                    }
+                    show_message(msg, 'error');
+                }
+            } catch (e) {
+                console.log('[ERROR] 更新里程碑异常:', e);
+                show_message('更新失败，请稍后重试', 'error');
+            }
+        }
+
+        async function delete_milestone(milestone_id, milestone_name) {
+            if (!confirm('确定要删除里程碑"' + milestone_name + '"吗？删除后不可恢复。')) {
+                return;
+            }
+
+            console.log('[INFO] 删除里程碑:', milestone_id);
+
+            try {
+                const result = await api_delete('/milestones/' + milestone_id);
+                if (result.code === 0) {
+                    show_message('里程碑已删除', 'success');
+                    await load_project();
+                } else {
+                    show_message(result.message, 'error');
+                }
+            } catch (e) {
+                console.log('[ERROR] 删除里程碑异常:', e);
+                show_message('删除失败，请稍后重试', 'error');
             }
         }
 

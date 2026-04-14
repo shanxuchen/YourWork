@@ -86,8 +86,10 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 def get_db():
     """获取数据库连接"""
-    conn = sqlite3.connect(DB_PATH)
+    conn = sqlite3.connect(DB_PATH, timeout=30)
     conn.row_factory = sqlite3.Row  # 返回字典格式
+    conn.execute("PRAGMA journal_mode=WAL")  # 开启 WAL 模式，允许读写并发
+    conn.execute("PRAGMA busy_timeout=30000")  # 忙等待 30 秒
     return conn
 
 
@@ -1008,7 +1010,7 @@ async def add_project_member(project_id: str, request: Request):
     # 添加成员
     conn.execute(
         "INSERT INTO project_members (id, project_id, user_id, display_name, roles) VALUES (?, ?, ?, ?, ?)",
-        (generate_id(), project_id, user_id, display_name, json.dumps(roles))
+        (generate_id(), project_id, user_id, display_name, roles or '')
     )
     conn.commit()
     conn.close()
