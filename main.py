@@ -646,11 +646,12 @@ async def get_projects(request: Request):
     where_conditions = []
     params = []
 
-    # 默认过滤归档项目，除非显式查询 status=archived
-    if status != 'archived':
+    # status=None: 默认视图，排除归档项目
+    # status='': 用户选择"全部状态"，显示所有项目
+    # status=具体值: 按指定状态筛选
+    if status is None:
         where_conditions.append("p.status != 'archived'")
-
-    if status:
+    elif status:
         where_conditions.append("p.status = ?")
         params.append(status)
 
